@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday Flappy Bird</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #87CEEB, #98FB98, #FFB6C1);
+            height: 100vh;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .photo-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect fill="%23f0f8ff" width="400" height="300" opacity="0.3"/><circle cx="150" cy="120" r="30" fill="%23ff69b4" opacity="0.2"/><circle cx="250" cy="120" r="30" fill="%23ff69b4" opacity="0.2"/><rect x="120" y="140" width="60" height="10" rx="5" fill="%23ff69b4" opacity="0.3"/><rect x="220" y="140" width="60" height="10" rx="5" fill="%23ff69b4" opacity="0.3"/><text x="200" y="180" text-anchor="middle" font-size="14" fill="%23ff1493">💕 Foto Kita Berdua 💕</text><text x="200" y="200" text-anchor="middle" font-size="10" fill="%23ff1493">Kenangan Indah</text></svg>') center/cover;
+            opacity: 0.2;
+            filter: blur(1px);
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(to bottom, #90EE90, #228B22);
+            border-top: 3px solid #006400;
+        }
+
+        .bird {
+            position: absolute;
+            font-size: 35px;
+            z-index: 10;
+            transition: none;
+            filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.3));
+            left: 100px;
+        }
+
+        .pipe {
+            position: absolute;
+            width: 60px;
+            background: linear-gradient(to right, #32CD32, #228B22);
+            border: 3px solid #006400;
+            border-radius: 8px;
+            z-index: 5;
+        }
+
+        .pipe-top {
+            top: 0;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+        }
+
+        .pipe-bottom {
+            bottom: 80px;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+
+        .clouds {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+            opacity: 0.7;
+            animation: float 15s infinite linear;
+        }
+
+        .cloud:before {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 50px;
+        }
+
+        .cloud1 {
+            width: 80px;
+            height: 40px;
+            top: 10%;
+            animation-duration: 20s;
+        }
+
+        .cloud1:before {
+            width: 40px;
+            height: 40px;
+            top: -20px;
+            left: 10px;
+        }
+
+        .cloud2 {
+            width: 60px;
+            height: 30px;
+            top: 30%;
+            animation-duration: 25s;
+            animation-delay: -10s;
+        }
+
+        .cloud2:before {
+            width: 30px;
+            height: 30px;
+            top: -15px;
+            left: 20px;
+        }
+
+        @keyframes float {
+            from { transform: translateX(-100px); }
+            to { transform: translateX(calc(100vw + 100px)); }
+        }
+
+        .score {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 20;
+        }
+
+        .finish-area {
+            position: absolute;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 80px;
+            height: 150px;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            border: 4px solid #FF6347;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #8B0000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: pulse 2s infinite;
+            z-index: 15;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translateY(-50%) scale(1); }
+            50% { transform: translateY(-50%) scale(1.08); }
+        }
+
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 50;
+            transition: transform 0.5s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        }
+
+        .game-over.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .gift-selection {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 50;
+            transition: transform 0.5s ease;
+        }
+
+        .gift-selection.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .gift-options {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .gift-item {
+            padding: 15px 20px;
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .gift-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .birthday-song {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 60;
+            transition: transform 0.5s ease;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            max-width: 90vw;
+        }
+
+        .birthday-song.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .song-text {
+            font-size: 20px;
+            margin: 20px 0;
+            animation: rainbow 3s infinite;
+        }
+
+        @keyframes rainbow {
+            0% { color: #ff6b6b; }
+            16% { color: #feca57; }
+            33% { color: #48dbfb; }
+            50% { color: #ff9ff3; }
+            66% { color: #54a0ff; }
+            83% { color: #5f27cd; }
+            100% { color: #ff6b6b; }
+        }
+
+        .hearts {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 8;
+        }
+
+        .heart {
+            position: absolute;
+            color: #ff69b4;
+            font-size: 18px;
+            animation: fall 3s linear infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 40;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.show {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 30;
+            background: rgba(255,255,255,0.9);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+
+        .start-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .start-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+        }
+
+        .instructions {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .fireworks {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 25;
+        }
+
+        .firework {
+            position: absolute;
+            border-radius: 50%;
+            animation: explode 1.5s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+
+        .collision-effect {
+            position: absolute;
+            pointer-events: none;
+            z-index: 30;
+            animation: collision 0.5s ease-out forwards;
+        }
+
+        @keyframes collision {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: scale(2) rotate(180deg); opacity: 0; }
+        }
+
+        @media (max-width: 768px) {
+            .gift-options {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .song-text {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="photo-bg"></div>
+        
+        <div class="clouds">
+            <div class="cloud cloud1"></div>
+            <div class="cloud cloud2"></div>
+        </div>
+
+        <div class="hearts" id="hearts"></div>
+
+        <div class="score" id="score">Score: 0</div>
+
+        <div class="bird" id="bird">🐦</div>
+        
+        <div class="ground"></div>
+        
+        <div class="finish-area" id="finishArea">
+            🎯<br>FINISH<br>🏆
+        </div>
+
+        <div class="fireworks" id="fireworks"></div>
+
+        <div class="start-screen" id="startScreen">
+            <h2>🎂 Birthday Flappy Bird 🎂</h2>
+            <div class="instructions">
+                <p>🐦 Klik untuk terbang, hindari pipa hijau!</p>
+                <p>💕 Capai finish untuk hadiah spesial!</p>
+            </div>
+            <button class="start-button" id="startBtn">🎉 Mulai Bermain! 🎉</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <div class="game-over" id="gameOver">
+        <h2>💥 Game Over! 💥</h2>
+        <p id="finalScore">Score: 0</p>
+        <button class="start-button" onclick="resetGame()">🔄 Main Lagi</button>
+    </div>
+
+    <div class="gift-selection" id="giftSelection">
+        <h2>🎁 Selamat! Pilih Hadiah Spesial! 🎁</h2>
+        <div class="gift-options">
+            <button class="gift-item" onclick="selectGift('💍 Cincin Berlian')">💍 Cincin</button>
+            <button class="gift-item" onclick="selectGift('🌹 Buket Mawar')">🌹 Bunga</button>
+            <button class="gift-item" onclick="selectGift('💖 Cinta Abadi')">💖 Cinta</button>
+            <button class="gift-item" onclick="selectGift('🎂 Kue Ultah')">🎂 Kue</button>
+        </div>
+        <p>Kamu berhasil sampai finish!</p>
+    </div>
+
+    <div class="birthday-song" id="birthdaySong">
+        <h1>🎂 SELAMAT ULANG TAHUN! 🎂</h1>
+        <div class="song-text">
+            ♪ Selamat ulang tahun sayang<br>
+            ♪ Semoga bahagia selalu<br>
+            ♪ Panjang umur dan sehat<br>
+            ♪ Semua mimpi jadi nyata ♪<br>
+            ♪ Love you so much! ♪
+        </div>
+        <p id="selectedGift"></p>
+        <button class="start-button" onclick="resetGame()">🔄 Main Lagi</button>
+    </div>
+
+    <script>
+        const bird = document.getElementById('bird');
+        const startBtn = document.getElementById('startBtn');
+        const startScreen = document.getElementById('startScreen');
+        const overlay = document.getElementById('overlay');
+        const giftSelection = document.getElementById('giftSelection');
+        const birthdaySong = document.getElementById('birthdaySong');
+        const gameOver = document.getElementById('gameOver');
+        const hearts = document.getElementById('hearts');
+        const fireworks = document.getElementById('fireworks');
+        const scoreElement = document.getElementById('score');
+        const finalScoreElement = document.getElementById('finalScore');
+        const gameContainer = document.querySelector('.game-container');
+
+        let birdY = 250;
+        let birdVelocity = 0;
+        let gravity = 0.5;
+        let isPlaying = false;
+        let pipes = [];
+        let score = 0;
+        let gameSpeed = 2;
+        let frameCount = 0;
+
+        class Pipe {
+            constructor(x) {
+                this.x = x;
+                this.gapSize = 180;
+                this.topHeight = Math.random() * (window.innerHeight - 300 - this.gapSize) + 50;
+                this.bottomY = this.topHeight + this.gapSize;
+                this.width = 60;
+                this.passed = false;
+                this.createElement();
+            }
+
+            createElement() {
+                // Top pipe
+                this.topElement = document.createElement('div');
+                this.topElement.className = 'pipe pipe-top';
+                this.topElement.style.left = this.x + 'px';
+                this.topElement.style.height = this.topHeight + 'px';
+                gameContainer.appendChild(this.topElement);
+
+                // Bottom pipe
+                this.bottomElement = document.createElement('div');
+                this.bottomElement.className = 'pipe pipe-bottom';
+                this.bottomElement.style.left = this.x + 'px';
+                this.bottomElement.style.height = (window.innerHeight - this.bottomY - 80) + 'px';
+                gameContainer.appendChild(this.bottomElement);
+            }
+
+            update() {
+                this.x -= gameSpeed;
+                this.topElement.style.left = this.x + 'px';
+                this.bottomElement.style.left = this.x + 'px';
+
+                // Check score
+                if (!this.passed && this.x + this.width < 100) {
+                    this.passed = true;
+                    score++;
+                    scoreElement.textContent = 'Score: ' + score;
+                    
+                    // Speed up slightly
+                    if (score % 3 === 0) {
+                        gameSpeed += 0.2;
+                    }
+                }
+            }
+
+            checkCollision() {
+                const birdLeft = 100;
+                const birdRight = 135;
+                const birdTop = birdY;
+                const birdBottom = birdY + 35;
+
+                if (birdRight > this.x && birdLeft < this.x + this.width) {
+                    if (birdTop < this.topHeight || birdBottom > this.bottomY) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            remove() {
+                if (this.topElement && this.topElement.parentNode) {
+                    this.topElement.parentNode.removeChild(this.topElement);
+                }
+                if (this.bottomElement && this.bottomElement.parentNode) {
+                    this.bottomElement.parentNode.removeChild(this.bottomElement);
+                }
+            }
+        }
+
+        function startGame() {
+            startScreen.style.display = 'none';
+            isPlaying = true;
+            birdY = 250;
+            birdVelocity = 0;
+            pipes = [];
+            score = 0;
+            gameSpeed = 2;
+            frameCount = 0;
+            scoreElement.textContent = 'Score: 0';
+            
+            createHearts();
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (!isPlaying) return;
+
+            frameCount++;
+
+            // Bird physics
+            birdVelocity += gravity;
+            birdY += birdVelocity;
+
+            // Bird rotation based on velocity
+            const rotation = Math.min(Math.max(birdVelocity * 3, -30), 90);
+            bird.style.top = birdY + 'px';
+            bird.style.transform = `rotate(${rotation}deg)`;
+
+            // Generate pipes
+            if (frameCount % 120 === 0) {
+                pipes.push(new Pipe(window.innerWidth));
+            }
+
+            // Update pipes
+            for (let i = pipes.length - 1; i >= 0; i--) {
+                pipes[i].update();
+
+                // Check collision
+                if (pipes[i].checkCollision()) {
+                    endGame();
+                    return;
+                }
+
+                // Remove off-screen pipes
+                if (pipes[i].x < -80) {
+                    pipes[i].remove();
+                    pipes.splice(i, 1);
+                }
+            }
+
+            // Check ground/ceiling collision
+            if (birdY < 0 || birdY > window.innerHeight - 115) {
+                endGame();
+                return;
+            }
+
+            // Check finish line
+            if (score >= 1) { // Win condition: score 10 points
+                winGame();
+                return;
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function jump() {
+            if (isPlaying) {
+                birdVelocity = -8;
+            }
+        }
+
+        function endGame() {
+            isPlaying = false;
+            
+            // Collision effect
+            const collisionEffect = document.createElement('div');
+            collisionEffect.className = 'collision-effect';
+            collisionEffect.textContent = '💥';
+            collisionEffect.style.left = '100px';
+            collisionEffect.style.top = birdY + 'px';
+            collisionEffect.style.fontSize = '50px';
+            gameContainer.appendChild(collisionEffect);
+
+            setTimeout(() => {
+                if (collisionEffect.parentNode) {
+                    collisionEffect.parentNode.removeChild(collisionEffect);
+                }
+            }, 500);
+
+            finalScoreElement.textContent = 'Score: ' + score;
+            overlay.classList.add('show');
+            gameOver.classList.add('show');
+        }
+
+        function winGame() {
+            isPlaying = false;
+            createFireworks();
+            overlay.classList.add('show');
+            giftSelection.classList.add('show');
+        }
+
+        function createHearts() {
+            const heartInterval = setInterval(() => {
+                if (!isPlaying && !overlay.classList.contains('show')) {
+                    clearInterval(heartInterval);
+                    return;
+                }
+                
+                const heart = document.createElement('div');
+                heart.className = 'heart';
+                heart.textContent = ['💕', '💖', '💗', '💝', '💘'][Math.floor(Math.random() * 5)];
+                heart.style.left = Math.random() * window.innerWidth + 'px';
+                heart.style.animationDelay = Math.random() * 2 + 's';
+                heart.style.fontSize = Math.random() * 8 + 15 + 'px';
+                hearts.appendChild(heart);
+
+                setTimeout(() => {
+                    if (hearts.contains(heart)) {
+                        hearts.removeChild(heart);
+                    }
+                }, 3000);
+            }, 800);
+        }
+
+        function createFireworks() {
+            for (let i = 0; i < 30; i++) {
+                setTimeout(() => {
+                    const firework = document.createElement('div');
+                    firework.className = 'firework';
+                    firework.style.left = Math.random() * window.innerWidth + 'px';
+                    firework.style.top = Math.random() * (window.innerHeight - 100) + 'px';
+                    firework.style.width = Math.random() * 30 + 15 + 'px';
+                    firework.style.height = firework.style.width;
+                    
+                    const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd'];
+                    firework.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    fireworks.appendChild(firework);
+
+                    setTimeout(() => {
+                        if (fireworks.contains(firework)) {
+                            fireworks.removeChild(firework);
+                        }
+                    }, 1500);
+                }, i * 50);
+            }
+        }
+
+        function selectGift(gift) {
+            giftSelection.classList.remove('show');
+            
+            setTimeout(() => {
+                document.getElementById('selectedGift').innerHTML = 
+                    `<strong>🎁 Hadiah pilihan: ${gift} 🎁</strong><br>
+                     <em>Score akhir: ${score} poin! Amazing!</em>`;
+                birthdaySong.classList.add('show');
+                playSong();
+            }, 500);
+        }
+
+        function playSong() {
+            const songText = document.querySelector('.song-text');
+            songText.style.animation = 'rainbow 2s infinite';
+        }
+
+        function resetGame() {
+            // Hide all modals
+            overlay.classList.remove('show');
+            giftSelection.classList.remove('show');
+            birthdaySong.classList.remove('show');
+            gameOver.classList.remove('show');
+            startScreen.style.display = 'block';
+            
+            // Reset bird position
+            birdY = 250;
+            birdVelocity = 0;
+            bird.style.top = birdY + 'px';
+            bird.style.transform = 'rotate(0deg)';
+            
+            // Clear all pipes
+            pipes.forEach(pipe => pipe.remove());
+            pipes = [];
+            
+            // Clear effects
+            hearts.innerHTML = '';
+            fireworks.innerHTML = '';
+            
+            // Reset game state
+            score = 0;
+            gameSpeed = 2;
+            frameCount = 0;
+            isPlaying = false;
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startGame);
+        
+        // Click/touch to jump
+        document.addEventListener('click', jump);
+        document.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        });
+        
+        // Spacebar to jump
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                jump();
+            }
+        });
+
+        // Auto-start background effects
+        window.addEventListener('load', () => {
+            // Background hearts
+            setInterval(() => {
+                if (isPlaying) return;
+                
+                const heart = document.createElement('div');
+                heart.className = 'heart';
+                heart.textContent = ['💕', '💖', '💗', '💝'][Math.floor(Math.random() * 4)];
+                heart.style.left = Math.random() * window.innerWidth + 'px';
+                heart.style.animationDelay = Math.random() * 2 + 's';
+                heart.style.fontSize = Math.random() * 10 + 15 + 'px';
+                heart.style.opacity = '0.3';
+                hearts.appendChild(heart);
+
+                setTimeout(() => {
+                    if (hearts.contains(heart)) {
+                        hearts.removeChild(heart);
+                    }
+                }, 3000);
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
